@@ -1,0 +1,9 @@
+"""Starter app. Replace/extend this as the real project takes shape."""
+
+
+def greet(name: str = "world") -> str:
+    return f"Hello, {name}!"
+
+
+if __name__ == "__main__":
+    print(greet())
