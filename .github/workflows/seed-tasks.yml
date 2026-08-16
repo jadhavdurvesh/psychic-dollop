@@ -48,12 +48,15 @@ jobs:
               {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                state: 'open',
-                labels: 'agent-task',
+                state: 'all',
                 per_page: 100,
               }
             );
-            const existingTitles = new Set(openIssues.map(i => i.title.trim()));
+            const existingTitles = new Set(
+              openIssues
+                .filter(i => !i.pull_request)
+                .map(i => i.title.trim())
+            );
 
             const requiredLabels = [
               { name: 'agent-task',         color: '0075ca', description: 'Queued for the agent to work on' },
