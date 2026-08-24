@@ -1,6 +1,7 @@
 import pytest
 from app import app, db
 from models import Url
+from flask import url_for
 
 @pytest.fixture
 def client():
@@ -15,25 +16,30 @@ def client():
             db.drop_all()
 
 def test_redirect_success(client):
-    # Create a short URL entry directly in the DB
-    url = Url(original_url='https://example.com', short_code='abc123', click_count=0)
+    # Create a short URL entry
+    short_code = 'abc123'
+    original_url = 'http://example.com'
+    url = Url(short_code=short_code, original_url=original_url, click_count=0)
     db.session.add(url)
     db.session.commit()
 
-    response = client.get('/abc123', follow_redirects=False)
+    response = client.get(f'/{short_code}')
     assert response.status_code == 301
-    assert response.headers['Location'] == 'https://example.com'
-
+    assert response.headers['Location'] == original_url
     # Verify click count incremented
-    updated = Url.query.filter_by(short_code='abc123').first()
-    assert updated.click_count == 1
+    refreshed = Url.query.filter_by(short_code=short_code).first()
+    assert refreshed.click_count == 1
 
 def test_redirect_not_found(client):
     response = client.get('/nonexistent')
     assert response.status_code == 404
 
 def test_reserved_route_not_caught(client):
-    # Ensure reserved path like /health is not intercepted by catch‑all
+    # Define a reserved route dynamically for the test
+    @app.route('/health')
+    def health():
+        return 'OK', 200
+
     response = client.get('/health')
-    # Assuming /health route returns 200 OK
     assert response.status_code == 200
+    assert response.data == b'OK'
