@@ -1,1 +1,3 @@
-# Add real dependencies here as the project grows.
+flask
+sqlalchemy
+pytest
