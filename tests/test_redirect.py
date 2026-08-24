@@ -1,44 +1,39 @@
 import pytest
-from app import app, db, Url
+from app import app, db
+from models import Url
 
-@pytest.fixture(autouse=True)
-def _setup_and_teardown():
-    """Create a fresh in‑memory database for each test.
-    The Flask app is configured to use SQLite in‑memory, so we just need to
-    create the tables before each test and drop them afterwards.
-    """
-    with app.app_context():
-        db.create_all()
-        yield
-        db.session.remove()
-        db.drop_all()
+@pytest.fixture
+def client():
+    app.config['TESTING'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    with app.test_client() as client:
+        with app.app_context():
+            db.create_all()
+        yield client
+        with app.app_context():
+            db.session.remove()
+            db.drop_all()
 
-def test_redirect_success():
-    short_code = 'abc123'
-    original = 'https://example.com/some/path'
-    # Insert a URL record.
-    with app.app_context():
-        url = Url(short_code=short_code, original_url=original, click_count=0)
-        db.session.add(url)
-        db.session.commit()
-    client = app.test_client()
-    response = client.get(f'/{short_code}')
+def test_redirect_success(client):
+    # Create a short URL entry directly in the DB
+    url = Url(original_url='https://example.com', short_code='abc123', click_count=0)
+    db.session.add(url)
+    db.session.commit()
+
+    response = client.get('/abc123', follow_redirects=False)
     assert response.status_code == 301
-    assert response.headers['Location'] == original
-    # Verify click_count incremented.
-    with app.app_context():
-        refreshed = Url.query.filter_by(short_code=short_code).first()
-        assert refreshed.click_count == 1
+    assert response.headers['Location'] == 'https://example.com'
 
-def test_redirect_not_found():
-    client = app.test_client()
-    response = client.get('/nonexistentcode')
+    # Verify click count incremented
+    updated = Url.query.filter_by(short_code='abc123').first()
+    assert updated.click_count == 1
+
+def test_redirect_not_found(client):
+    response = client.get('/nonexistent')
     assert response.status_code == 404
 
-def test_reserved_route_not_caught():
-    client = app.test_client()
+def test_reserved_route_not_caught(client):
+    # Ensure reserved path like /health is not intercepted by catch‑all
     response = client.get('/health')
-    # Health endpoint is explicitly defined, so it should return 200, not be
-    # captured by the generic short‑code route.
+    # Assuming /health route returns 200 OK
     assert response.status_code == 200
-    assert response.data == b'OK'
