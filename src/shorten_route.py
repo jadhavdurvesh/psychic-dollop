@@ -1,60 +1,51 @@
+import random
 import string
-import secrets
 
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import JSONResponse
+from flask import Blueprint, current_app, jsonify, request
 
-from src.store import store
+from .store import store
 
-router = APIRouter()
-
-# Characters allowed in the generated short code.
-ALPHANUM = string.ascii_letters + string.digits
-CODE_LENGTH = 6  # Adjust length as needed for collision probability.
+bp = Blueprint("shorten", __name__)
 
 
-def _generate_unique_code() -> str:
+def _generate_code(length: int = 6) -> str:
+    """Generate a random alphanumeric short code."""
+    chars = string.ascii_letters + string.digits
+    return "".join(random.choice(chars) for _ in range(length))
+
+
+@bp.route("/api/shorten", methods=["POST"])
+def shorten():
     """
-    Generate a random alphanumeric code that does not already exist in the store.
+    Accept a JSON payload ``{ "original_url": "<url>" }`` and return a
+    newly‑generated short code together with the full short URL.
+
+    Errors:
+        * 400 – malformed JSON or missing/invalid ``original_url``.
+        * 500 – unable to generate a unique short code after several attempts.
     """
-    while True:
-        candidate = "".join(secrets.choice(ALPHANUM) for _ in range(CODE_LENGTH))
-        if not store.exists(candidate):
-            return candidate
+    if not request.is_json:
+        return jsonify({"error": "Invalid JSON"}), 400
 
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON"}), 400
 
-@router.post("/api/shorten")
-async def shorten(request: Request):
-    """
-    Create a short URL for a given ``original_url``.
-    Expected JSON payload: ``{"original_url": "<url>"}``.
-    Returns JSON with ``short_code`` and ``short_url``.
-    """
-    # ------------------------------------------------------------------
-    # Validate JSON payload.
-    # ------------------------------------------------------------------
-    try:
-        payload = await request.json()
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+    original_url = data.get("original_url")
+    if not original_url or not isinstance(original_url, str):
+        return jsonify({"error": "Missing or invalid 'original_url'"}), 400
 
-    original_url = payload.get("original_url")
-    if not isinstance(original_url, str) or not original_url.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="original_url must be a non‑empty string",
-        )
+    # Try to generate a unique short code.
+    for _ in range(10):
+        code = _generate_code()
+        if not store.exists(code):
+            store.set(code, original_url)
+            break
+    else:
+        # Extremely unlikely, but we guard against an endless loop.
+        return jsonify({"error": "Could not generate a unique short code"}), 500
 
-    # ------------------------------------------------------------------
-    # Generate a unique short code and store the mapping.
-    # ------------------------------------------------------------------
-    code = _generate_unique_code()
-    store.set(code, original_url.strip())
-
-    # ------------------------------------------------------------------
-    # Build the absolute short URL using the request's base URL.
-    # ------------------------------------------------------------------
-    base_url = str(request.base_url).rstrip("/")  # Normalise trailing slash.
-    short_url = f"{base_url}/{code}"
-
-    return JSONResponse(content={"short_code": code, "short_url": short_url})
+    # Build the absolute short URL using the request host.
+    host = request.host_url.rstrip("/")
+    short_url = f"{host}/{code}"
+    return jsonify({"code": code, "short_url": short_url}), 201

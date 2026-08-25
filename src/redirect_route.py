@@ -1,17 +1,16 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import RedirectResponse
+from flask import abort, redirect
 
-from src.store import store
-
-router = APIRouter()
+from .store import store
 
 
-@router.get("/{short_code}")
-def redirect(short_code: str):
-    """
-    Resolve ``short_code`` to its original URL and issue a redirect.
-    """
-    original_url = store.get(short_code)
-    if original_url is None:
-        raise HTTPException(status_code=404, detail="Short code not found")
-    return RedirectResponse(url=original_url)
+def register_redirect(app):
+    @app.route("/<code>", methods=["GET"])
+    def _redirect(code):
+        """
+        Redirect the user to the original URL mapped by *code*.
+        Returns 404 if the code does not exist.
+        """
+        original_url = store.get(code)
+        if original_url:
+            return redirect(original_url)
+        abort(404, description="Short code not found")

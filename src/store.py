@@ -1,4 +1,4 @@
-from threading import Lock
+import threading
 from typing import Optional
 
 
@@ -9,23 +9,23 @@ class URLStore:
 
     def __init__(self) -> None:
         self._store: dict[str, str] = {}
-        self._lock = Lock()
-
-    def set(self, code: str, url: str) -> None:
-        """Store a mapping."""
-        with self._lock:
-            self._store[code] = url
+        self._lock = threading.Lock()
 
     def get(self, code: str) -> Optional[str]:
-        """Retrieve the original URL for a short code, or ``None`` if not found."""
+        """Return the original URL for *code* or ``None`` if not present."""
         with self._lock:
             return self._store.get(code)
 
+    def set(self, code: str, url: str) -> None:
+        """Persist *code* → *url* mapping."""
+        with self._lock:
+            self._store[code] = url
+
     def exists(self, code: str) -> bool:
-        """Check whether a short code already exists."""
+        """Check whether *code* already exists in the store."""
         with self._lock:
             return code in self._store
 
 
-# A singleton store used throughout the application.
+# A single global store instance used by the application.
 store = URLStore()
