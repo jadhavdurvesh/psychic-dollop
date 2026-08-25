@@ -1,26 +1,17 @@
-from flask import redirect, abort
-from .app import app, db
-from .models import Url
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import RedirectResponse
 
-# Reserved paths that should not be treated as short codes
-RESERVED_PATHS = {'static', 'health'}
+from src.store import store
 
-@app.route('/<string:short_code>', methods=['GET'])
-def redirect_short_code(short_code):
-    # Do not capture reserved routes
-    if short_code in RESERVED_PATHS:
-        abort(404)
+router = APIRouter()
 
-    url_entry = Url.query.filter_by(short_code=short_code).first()
-    if not url_entry:
-        abort(404)
 
-    try:
-        # Safely increment click count (handle None case)
-        url_entry.click_count = (url_entry.click_count or 0) + 1
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        abort(500)
-
-    return redirect(url_entry.original_url, code=301)
+@router.get("/{short_code}")
+def redirect(short_code: str):
+    """
+    Resolve ``short_code`` to its original URL and issue a redirect.
+    """
+    original_url = store.get(short_code)
+    if original_url is None:
+        raise HTTPException(status_code=404, detail="Short code not found")
+    return RedirectResponse(url=original_url)
