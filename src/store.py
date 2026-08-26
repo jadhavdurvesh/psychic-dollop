@@ -1,25 +1,35 @@
-from sqlalchemy import create_engine, desc
-from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.exc import SQLAlchemyError
-from src.models import Base, Link
+from typing import List
 
-# Use an SQLite file database; tests can override this via the ENGINE env var if needed.
-engine = create_engine("sqlite:///links.db", connect_args={"check_same_thread": False})
-Base.metadata.create_all(engine)
+from sqlalchemy.orm import Session
 
-Session = scoped_session(sessionmaker(bind=engine))
+from .models import Link, Base
+from .db import engine, SessionLocal  # assuming a db module provides engine & session factory
 
 
-def get_all_links_sorted():
+def get_db() -> Session:
+    """Provide a transactional scope around a series of operations."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def init_db() -> None:
+    """Create tables if they don't exist."""
+    Base.metadata.create_all(bind=engine)
+
+
+def get_all_links_sorted() -> List[Link]:
     """
-    Retrieve all Link records ordered by click_count descending.
-    Returns a list of Link objects.
+    Retrieve all Link objects ordered by click_count descending.
+    This helper is used by the GET /api/links endpoint.
     """
-    session = Session()
+    session = SessionLocal()
     try:
         links = (
             session.query(Link)
-            .order_by(desc(Link.click_count))
+            .order_by(Link.click_count.desc())
             .all()
         )
         return links

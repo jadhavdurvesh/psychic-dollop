@@ -1,19 +1,20 @@
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, jsonify
 
-from src.store import get_all_links_sorted
+from . import store
 
-links_bp = Blueprint('links', __name__)
+links_bp = Blueprint("links", __name__, url_prefix="/api")
 
-@links_bp.route('/api/links', methods=['GET'])
+
+@links_bp.route("/links", methods=["GET"])
 def get_links():
     """
-    Return a JSON array of all shortened links ordered by click count descending.
+    Return a JSON array of all shortened links sorted by click count descending.
+    Each link is represented by its ``to_dict`` serialization.
     """
     try:
-        links = get_all_links_sorted()
+        links = store.get_all_links_sorted()
         result = [link.to_dict() for link in links]
         return jsonify(result), 200
-    except Exception as e:
-        # Log the error for debugging purposes
-        current_app.logger.error(f"Failed to retrieve links: {e}")
-        return jsonify({"error": "Internal server error"}), 500
+    except Exception as exc:  # pragma: no cover – generic safety net
+        # In a real application you would log the exception.
+        return jsonify({"error": "Internal Server Error"}), 500
