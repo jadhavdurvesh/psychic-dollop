@@ -1,25 +1,21 @@
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Dict
-
-from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+from typing import Optional, Dict, Any
 
 
-class Link(Base):
-    __tablename__ = "links"
+@dataclass
+class Link:
+    id: int
+    original_url: str
+    short_code: str
+    click_count: int = 0
+    created_at: Optional[datetime] = None
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    original_url = Column(String, nullable=False)
-    short_code = Column(String, unique=True, nullable=False)
-    click_count = Column(Integer, default=0, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
-
-    def to_dict(self) -> Dict[str, Optional[object]]:
+    def to_dict(self) -> Dict[str, Any]:
         """
-        Convert the Link instance into a JSON‑serializable dictionary.
-        Handles ``created_at`` being ``None`` gracefully.
+        Return a JSON‑serializable representation of the Link.
+        ``created_at`` is converted to ISO‑8601 string if present,
+        otherwise ``None`` is emitted.
         """
         return {
             "id": self.id,
