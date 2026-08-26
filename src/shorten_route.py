@@ -1,51 +1,47 @@
-import random
-import string
+from flask import Blueprint, request, jsonify, current_app
+from urllib.parse import urlparse
+from ..app import db, ShortUrl, generate_short_code
 
-from flask import Blueprint, current_app, jsonify, request
+shorten_bp = Blueprint("shorten", __name__)
 
-from .store import store
+def _is_valid_url(url: str) -> bool:
+    """
+    Validate the structure of a URL using urllib.parse.urlparse.
+    A valid URL must have a scheme (e.g., http, https) and a network location.
+    """
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except Exception:
+        return False
 
-bp = Blueprint("shorten", __name__)
-
-
-def _generate_code(length: int = 6) -> str:
-    """Generate a random alphanumeric short code."""
-    chars = string.ascii_letters + string.digits
-    return "".join(random.choice(chars) for _ in range(length))
-
-
-@bp.route("/api/shorten", methods=["POST"])
+@shorten_bp.route("/shorten", methods=["POST"])
 def shorten():
-    """
-    Accept a JSON payload ``{ "original_url": "<url>" }`` and return a
-    newly‑generated short code together with the full short URL.
-
-    Errors:
-        * 400 – malformed JSON or missing/invalid ``original_url``.
-        * 500 – unable to generate a unique short code after several attempts.
-    """
+    # Ensure request contains JSON
     if not request.is_json:
-        return jsonify({"error": "Invalid JSON"}), 400
+        return jsonify(error="Request body must be JSON"), 400
 
-    data = request.get_json(silent=True)
-    if not isinstance(data, dict):
-        return jsonify({"error": "Invalid JSON"}), 400
+    data = request.get_json(silent=True) or {}
 
-    original_url = data.get("original_url")
-    if not original_url or not isinstance(original_url, str):
-        return jsonify({"error": "Missing or invalid 'original_url'"}), 400
+    # Verify 'url' field exists
+    if "url" not in data:
+        return jsonify(error="Missing 'url' field in JSON payload"), 400
 
-    # Try to generate a unique short code.
-    for _ in range(10):
-        code = _generate_code()
-        if not store.exists(code):
-            store.set(code, original_url)
-            break
-    else:
-        # Extremely unlikely, but we guard against an endless loop.
-        return jsonify({"error": "Could not generate a unique short code"}), 500
+    url = data["url"]
 
-    # Build the absolute short URL using the request host.
-    host = request.host_url.rstrip("/")
-    short_url = f"{host}/{code}"
-    return jsonify({"code": code, "short_url": short_url}), 201
+    # Validate that 'url' is a non‑empty string
+    if not isinstance(url, str) or not url.strip():
+        return jsonify(error="'url' must be a non‑empty string"), 400
+
+    # Validate URL structure
+    if not _is_valid_url(url):
+        return jsonify(error="Invalid URL format"), 400
+
+    # Existing shortening logic
+    short_code = generate_short_code()
+    short_entry = ShortUrl(original_url=url, short_code=short_code)
+    db.session.add(short_entry)
+    db.session.commit()
+
+    short_url = request.host_url.rstrip("/") + "/" + short_code
+    return jsonify(short_url=short_url), 201

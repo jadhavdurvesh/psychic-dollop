@@ -1,26 +1,25 @@
 [
   {
-    "title": "Add URL shortening POST endpoint",
-    "approach": "Introduce a shared in\u2011memory store (src/store.py) to hold short_code\u2192original_url mappings. Update the existing redirect route to use this store. Implement a new POST /api/shorten route that validates JSON, generates a unique short code, stores the mapping, and returns both the code and full short URL. Register the new route in app.py.",
+    "title": "Add validation to POST /api/shorten",
+    "approach": "Introduce a URL validation helper in src/shorten_route.py using urllib.parse.urlparse. Update the POST handler to check for a JSON payload, presence of a 'url' field, ensure it is a non\u2011empty string, and verify the URL structure. Return a 400 response with a clear JSON error message when validation fails, otherwise proceed with existing shortening logic.",
     "files_to_modify": [
-      "app.py",
-      "src/redirect_route.py"
+      "src/shorten_route.py",
+      "tests/test_app.py"
     ],
-    "files_to_create": [
-      "src/store.py",
-      "src/shorten_route.py"
-    ],
+    "files_to_create": [],
     "tests_to_write": [
-      "test POST /api/shorten with valid original_url returns 200 and JSON containing short_code and short_url",
-      "test POST /api/shorten with missing original_url returns 400 with error message",
-      "test POST /api/shorten with non\u2011JSON payload returns 400",
-      "test that a short_code returned by POST can be used with GET /<short_code> to redirect to the original URL"
+      "test_shorten_missing_body: send POST without JSON body and expect 400 with error about missing 'url'",
+      "test_shorten_missing_url_field: send JSON without 'url' key and expect 400 with appropriate error",
+      "test_shorten_empty_url_string: send {\"url\": \"\"} and expect 400 with error about non\u2011empty string",
+      "test_shorten_non_string_url: send {\"url\": 123} and expect 400 with error about URL must be a string",
+      "test_shorten_malformed_url: send {\"url\": \"not-a-valid-url\"} and expect 400 with error about malformed URL",
+      "test_shorten_valid_url: send a well\u2011formed URL and expect 201 with short_code in response"
     ],
     "edge_cases": [
-      "Missing or malformed JSON payload",
-      "original_url field absent or not a string",
-      "Generated short_code collides with existing code \u2013 ensure loop generates a new unique code",
-      "request.host_url may end with a slash \u2013 normalize to avoid double slashes in short_url"
+      "Request body not JSON or missing Content-Type",
+      "URL with missing scheme or netloc (e.g., 'example.com')",
+      "URL containing whitespace only",
+      "Extremely long URLs (beyond typical length) \u2013 still treated as malformed if scheme/netloc missing"
     ],
     "dependencies": []
   }

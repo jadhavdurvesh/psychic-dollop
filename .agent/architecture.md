@@ -1,53 +1,70 @@
 ## Relevant Architecture
+- **Flask app** – defined in `src/app.py` (registered in the top‑level `app.py`).  
+- **Route definition** – the POST `/api/shorten` endpoint lives in `src/shorten_route.py`.  
+- **Data store** – `src/store.py` is called from the route after the URL has been validated.  
+- **Tests** – `tests/test_app.py` exercises the `/api/shorten` endpoint and will verify the new validation behaviour.
 
-| File | Role |
-|------|------|
-| **app.py** | Creates the Flask app and registers route modules. |
-| **src/redirect_route.py** | Handles `GET /<short_code>` – looks up a stored mapping and redirects. |
-| **src/*** (new) **store.py** | Central in‑memory store (`url_map`) shared by all route handlers. |
-| **src/shorten_route.py** (new) | Will expose `POST /api/shorten` that creates a short‑code, stores the mapping and returns JSON. |
-| **tests/*** | Verify both redirect and new shorten behavior. |
-
-The existing `redirect_route` already needs a storage location for the code‑→‑URL map. By introducing a dedicated `store.py` we give both the redirect and the new shorten endpoint a single source of truth without changing the public API.
-
-## Files that need to be changed / added
-
-| Path | Change |
+## Files that need to change
+| Path | Reason |
 |------|--------|
-| **src/store.py** *(new)* | ```python\nurl_map: dict[str, str] = {}\n``` |
-| **src/redirect_route.py** | Import `url_map` from `src.store` (instead of any private dict) and use it for look‑ups. |
-| **src/shorten_route.py** *(new)* | Implement the POST endpoint, generate a unique short code, store it in `url_map`, and return `short_code` & `short_url`. |
-| **app.py** | Register the new route module (`from src.shorten_route import register_routes as register_shorten; register_shorten(app)`). |
-| **tests/test_app.py** (if needed) | No code change – the existing tests will now hit the new endpoint. |
+| `src/shorten_route.py` | Contains the POST handler; we must add validation and return `400` on failure. |
+| *(optional)* `src/app.py` | If the route imports a helper for error responses, we may add one here, but not required. |
+| `tests/test_app.py` | May need to be updated only if the test expectations for the error payload differ from our implementation (usually not needed). |
 
-## What needs to be changed & approach
-
-1. **Create a shared store** (`src/store.py`).  
-   - Simple dict is sufficient for unit‑test scope.  
-   - Exported as `url_map`.
-
-2. **Update redirect route** to use the shared store:  
+## What to change & approach
+1. **Import needed utilities** at the top of `src/shorten_route.py`  
    ```python
-   from src.store import url_map
-   # existing logic stays the same, just reference url_map
+   from flask import request, jsonify
+   from urllib.parse import urlparse
    ```
 
-3. **Add shorten route** (`src/shorten_route.py`):  
-   - Validate JSON payload (`original_url` required).  
-   - Generate a random alphanumeric code (`6` chars by default).  
-   - Ensure uniqueness by looping if the generated code already exists in `url_map`.  
-   - Store mapping `url_map[code] = original_url`.  
-   - Build `short_url` using the request’s host (`request.host_url.rstrip('/') + '/' + code`).  
-   - Return JSON `{ "short_code": code, "short_url": short_url }` with status **200**.  
-   - Return **400** with an error JSON if payload is malformed.
+2. **Add a validation helper** (inline or separate function)  
+   ```python
+   def _is_valid_url(url: str) -> bool:
+       try:
+           result = urlparse(url)
+           return all([result.scheme, result.netloc])
+       except Exception:
+           return False
+   ```
 
-4. **Register the new route** in `app.py` after the existing route registration so both GET and POST work.
+3. **Update the POST handler** (`shorten`)  
+   ```python
+   @bp.post("/api/shorten")
+   def shorten():
+       payload = request.get_json(silent=True)
+       if not payload or "url" not in payload:
+           return jsonify({"error": "Missing 'url' in request body"}), 400
+
+       url = payload["url"]
+       if not isinstance(url, str) or not url.strip():
+           return jsonify({"error": "URL must be a non‑empty string"}), 400
+
+       if not _is_valid_url(url):
+           return jsonify({"error": "Malformed URL"}), 400
+
+       # existing logic – generate short code, store, and return response
+       short_code = generate_code()
+       store.save(short_code, url)
+       return jsonify({"short_code": short_code}), 201
+   ```
+
+4. **Keep existing success flow unchanged** – the only new code is the early‑return checks.
+
+5. **Run test suite** – ensure `tests/test_app.py` now passes for both valid and invalid payloads.
 
 ## What could break / needs careful handling
+| Concern | Why it matters | Mitigation |
+|---------|----------------|------------|
+| **Missing JSON or wrong `Content-Type`** | `request.get_json(silent=True)` returns `None` when body isn’t JSON. | We explicitly check for `payload` being falsy and return a 400. |
+| **Non‑string `url`** | `urlparse` expects a string; passing other types raises `TypeError`. | Guard with `isinstance(url, str)`. |
+| **Very long or malicious URLs** | Not part of the current spec, but could cause performance issues. | The simple validation only checks scheme/netloc; deeper checks can be added later without breaking existing behaviour. |
+| **Existing tests expecting a different error key** | If tests look for `message` instead of `error`, they will fail. | Align the JSON key (`error`) with what the tests assert; adjust tests if they are outdated. |
+| **Import side‑effects** | Adding `urlparse` is safe; no new external dependencies. | No extra packages required, keeping `requirements.txt` unchanged. |
+| **Route registration** | The route is already registered via Blueprint in `src/app.py`; adding validation does not affect registration. | No change needed in `src/app.py`. |
 
-| Issue | Mitigation |
-|-------|------------|
-| **Collision of short codes** – extremely low but possible. | Loop until a fresh code is generated (`while code in url_map`). |
-| **`request.host_url` formatting** – may already end with `/`. | Use `rstrip('/')` before appending the code to avoid double slashes. |
-| **Missing/invalid JSON** – Flask’s `request.get_json()` returns `None` on bad payload. | Explicitly check for `None` and missing `original_url`, return 400 with clear error. |
-| **Thread‑safety** – In‑memory dict is not safe for production concurrency.
+## Summary of changes
+- **`src/shorten_route.py`** – import `jsonify`, `request`, `urlparse`; add `_is_valid_url`; prepend validation checks to the POST handler; return `400` with a clear JSON error payload when validation fails.  
+- No other files need modification unless the test suite expects a different error structure.  
+
+After implementing the above, the API will reject missing or malformed URLs with a `400 Bad Request` and a descriptive error message, satisfying the task requirements.
