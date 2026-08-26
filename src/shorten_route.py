@@ -1,51 +1,75 @@
-import random
-import string
+from flask import Blueprint, request, jsonify, current_app
+from urllib.parse import urlparse
 
-from flask import Blueprint, current_app, jsonify, request
+# Assuming there is a Shortener service/class that handles the actual URL shortening logic.
+# Import it accordingly. Adjust the import path based on the actual project structure.
+try:
+    from .shortener import Shortener
+except ImportError:
+    # Fallback import for projects that expose Shortener differently.
+    from shortener import Shortener  # type: ignore
 
-from .store import store
+shorten_bp = Blueprint('shorten', __name__)
 
-bp = Blueprint("shorten", __name__)
+def _is_valid_url(url: str) -> bool:
+    """
+    Validate that the provided string is a well‑formed URL with a scheme and network location.
+    """
+    try:
+        parsed = urlparse(url.strip())
+        return all([parsed.scheme, parsed.netloc])
+    except Exception:
+        return False
 
+def _validation_error(message: str):
+    """
+    Helper to create a consistent JSON error response for validation failures.
+    """
+    response = jsonify({"error": message})
+    response.status_code = 400
+    return response
 
-def _generate_code(length: int = 6) -> str:
-    """Generate a random alphanumeric short code."""
-    chars = string.ascii_letters + string.digits
-    return "".join(random.choice(chars) for _ in range(length))
-
-
-@bp.route("/api/shorten", methods=["POST"])
+@shorten_bp.route('/api/shorten', methods=['POST'])
 def shorten():
     """
-    Accept a JSON payload ``{ "original_url": "<url>" }`` and return a
-    newly‑generated short code together with the full short URL.
-
-    Errors:
-        * 400 – malformed JSON or missing/invalid ``original_url``.
-        * 500 – unable to generate a unique short code after several attempts.
+    POST /api/shorten
+    Expects a JSON payload with a non‑empty string field ``url``.
+    Performs validation on the URL structure before delegating to the shortening service.
+    Returns:
+        - 201 with JSON containing the shortened URL on success.
+        - 400 with JSON error details on any validation failure.
     """
+    # Ensure request content type is JSON
     if not request.is_json:
-        return jsonify({"error": "Invalid JSON"}), 400
+        return _validation_error("Request payload must be in JSON format.")
 
-    data = request.get_json(silent=True)
-    if not isinstance(data, dict):
-        return jsonify({"error": "Invalid JSON"}), 400
+    # Parse JSON safely
+    payload = request.get_json(silent=True)
+    if payload is None:
+        return _validation_error("Malformed JSON payload.")
 
-    original_url = data.get("original_url")
-    if not original_url or not isinstance(original_url, str):
-        return jsonify({"error": "Missing or invalid 'original_url'"}), 400
+    # Validate presence of 'url' key
+    if 'url' not in payload:
+        return _validation_error("Missing required field: 'url'.")
 
-    # Try to generate a unique short code.
-    for _ in range(10):
-        code = _generate_code()
-        if not store.exists(code):
-            store.set(code, original_url)
-            break
-    else:
-        # Extremely unlikely, but we guard against an endless loop.
-        return jsonify({"error": "Could not generate a unique short code"}), 500
+    url = payload['url']
 
-    # Build the absolute short URL using the request host.
-    host = request.host_url.rstrip("/")
-    short_url = f"{host}/{code}"
-    return jsonify({"code": code, "short_url": short_url}), 201
+    # Validate that 'url' is a non‑empty string
+    if not isinstance(url, str):
+        return _validation_error("Field 'url' must be a string.")
+    if not url.strip():
+        return _validation_error("Field 'url' cannot be empty or whitespace only.")
+
+    # Validate URL structure (scheme and netloc required)
+    if not _is_valid_url(url):
+        return _validation_error("Field 'url' must be a valid URL with scheme and domain.")
+
+    # At this point validation passed; proceed with shortening logic.
+    try:
+        short_code = Shortener.shorten(url)
+    except Exception as exc:
+        # If the underlying shortening service raises an error, return a generic 500.
+        current_app.logger.exception("Error during URL shortening")
+        return jsonify({"error": "Internal server error"}), 500
+
+    return jsonify({"short_url": short_code}), 201
