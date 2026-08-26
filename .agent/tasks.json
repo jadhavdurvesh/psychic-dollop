@@ -1,21 +1,26 @@
 [
   {
-    "title": "Add GET /<short_code> redirect endpoint",
-    "approach": "Add a new Flask route that captures a short_code path segment, looks up the corresponding Url record, aborts with 404 if not found, increments click_count, commits the change, and returns a 301 redirect to the original URL. Place the route after all explicit routes to avoid shadowing and import redirect and abort.",
+    "title": "Add URL shortening POST endpoint",
+    "approach": "Introduce a shared in\u2011memory store (src/store.py) to hold short_code\u2192original_url mappings. Update the existing redirect route to use this store. Implement a new POST /api/shorten route that validates JSON, generates a unique short code, stores the mapping, and returns both the code and full short URL. Register the new route in app.py.",
     "files_to_modify": [
-      "app.py"
+      "app.py",
+      "src/redirect_route.py"
     ],
-    "files_to_create": [],
+    "files_to_create": [
+      "src/store.py",
+      "src/shorten_route.py"
+    ],
     "tests_to_write": [
-      "test_redirect_success: create a short URL entry, issue GET /<short_code>, assert response status 301, Location header matches original URL, and click_count increased by 1.",
-      "test_redirect_not_found: issue GET /nonexistent_code, assert response status 404.",
-      "test_reserved_route_not_caught: ensure that requests to known static or health endpoints are not intercepted by the catch\u2011all route (status not 404 unless truly missing)."
+      "test POST /api/shorten with valid original_url returns 200 and JSON containing short_code and short_url",
+      "test POST /api/shorten with missing original_url returns 400 with error message",
+      "test POST /api/shorten with non\u2011JSON payload returns 400",
+      "test that a short_code returned by POST can be used with GET /<short_code> to redirect to the original URL"
     ],
     "edge_cases": [
-      "Short code does not exist \u2192 return 404.",
-      "Short code collides with reserved paths (e.g., static files, health checks) \u2192 treat as not found.",
-      "Database commit fails \u2192 roll back and return 500 (optional handling).",
-      "Concurrent requests may cause race condition on click_count increment (acceptable for simple app)."
+      "Missing or malformed JSON payload",
+      "original_url field absent or not a string",
+      "Generated short_code collides with existing code \u2013 ensure loop generates a new unique code",
+      "request.host_url may end with a slash \u2013 normalize to avoid double slashes in short_url"
     ],
     "dependencies": []
   }
