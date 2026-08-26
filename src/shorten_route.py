@@ -1,47 +1,64 @@
-from flask import Blueprint, request, jsonify, current_app
-from urllib.parse import urlparse
-from ..app import db, ShortUrl, generate_short_code
+import urllib.parse
 
-shorten_bp = Blueprint("shorten", __name__)
+from flask import Blueprint, request, jsonify, current_app
+
+shorten_bp = Blueprint('shorten', __name__)
+
 
 def _is_valid_url(url: str) -> bool:
     """
-    Validate the structure of a URL using urllib.parse.urlparse.
-    A valid URL must have a scheme (e.g., http, https) and a network location.
+    Validate that the supplied string is a well‑formed HTTP/HTTPS URL.
+
+    Returns True if the URL has a scheme of http or https and a non‑empty netloc.
     """
     try:
-        result = urlparse(url)
-        return all([result.scheme, result.netloc])
+        parsed = urllib.parse.urlparse(url)
+        return parsed.scheme in ("http", "https") and bool(parsed.netloc)
     except Exception:
         return False
 
-@shorten_bp.route("/shorten", methods=["POST"])
+
+@shorten_bp.route("/api/shorten", methods=["POST"])
 def shorten():
-    # Ensure request contains JSON
+    """
+    Accept a JSON payload containing a ``url`` key and return a shortened URL.
+
+    Validation performed:
+    * request must be JSON
+    * payload must be a JSON object
+    * ``url`` key must be present
+    * ``url`` must be a non‑empty string
+    * ``url`` must be a syntactically valid HTTP/HTTPS URL
+    """
+    # Ensure request is JSON
     if not request.is_json:
-        return jsonify(error="Request body must be JSON"), 400
+        return jsonify(error="Invalid request: JSON payload required"), 400
 
-    data = request.get_json(silent=True) or {}
+    # Parse JSON safely
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(error="Invalid request: JSON object required"), 400
 
-    # Verify 'url' field exists
+    # Presence of 'url' field
     if "url" not in data:
-        return jsonify(error="Missing 'url' field in JSON payload"), 400
+        return jsonify(error="Invalid request: 'url' field missing"), 400
 
     url = data["url"]
 
-    # Validate that 'url' is a non‑empty string
-    if not isinstance(url, str) or not url.strip():
-        return jsonify(error="'url' must be a non‑empty string"), 400
+    # ``url`` must be a string
+    if not isinstance(url, str):
+        return jsonify(error="Invalid request: 'url' must be a string"), 400
+
+    # Strip whitespace and ensure non‑empty
+    url = url.strip()
+    if not url:
+        return jsonify(error="Invalid request: 'url' cannot be empty"), 400
 
     # Validate URL structure
     if not _is_valid_url(url):
-        return jsonify(error="Invalid URL format"), 400
+        return jsonify(error="Invalid request: malformed URL"), 400
 
-    # Existing shortening logic
-    short_code = generate_short_code()
-    short_entry = ShortUrl(original_url=url, short_code=short_code)
-    db.session.add(short_entry)
-    db.session.commit()
-
-    short_url = request.host_url.rstrip("/") + "/" + short_code
+    # Existing shortening logic – delegate to the configured shortener service
+    short_code = current_app.config["SHORTENER"].shorten(url)
+    short_url = f"{request.host_url}{short_code}"
     return jsonify(short_url=short_url), 201
