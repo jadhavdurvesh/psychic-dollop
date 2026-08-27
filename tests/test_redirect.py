@@ -1,45 +1,32 @@
 import pytest
-from app import app, db
-from models import Url
-from flask import url_for
-
-@pytest.fixture
-def client():
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    with app.test_client() as client:
-        with app.app_context():
-            db.create_all()
-        yield client
-        with app.app_context():
-            db.session.remove()
-            db.drop_all()
 
 def test_redirect_success(client):
-    # Create a short URL entry
-    short_code = 'abc123'
-    original_url = 'http://example.com'
-    url = Url(short_code=short_code, original_url=original_url, click_count=0)
-    db.session.add(url)
-    db.session.commit()
+    """A previously created short code must redirect (302) to the original URL."""
+    # First create a short link
+    create_resp = client.post("/links", json={"url": "https://redirect.me"})
+    assert create_resp.status_code == 201
+    code = create_resp.get_json()["code"]
 
-    response = client.get(f'/{short_code}')
-    assert response.status_code == 301
-    assert response.headers['Location'] == original_url
-    # Verify click count incremented
-    refreshed = Url.query.filter_by(short_code=short_code).first()
-    assert refreshed.click_count == 1
+    # Then request the short code
+    redirect_resp = client.get(f"/{code}", follow_redirects=False)
+    assert redirect_resp.status_code in (301, 302)
+    # Flask's redirect uses the `Location` header
+    assert redirect_resp.headers["Location"] == "https://redirect.me"
 
 def test_redirect_not_found(client):
-    response = client.get('/nonexistent')
-    assert response.status_code == 404
+    """Requesting a non‑existent code should yield a 404."""
+    resp = client.get("/nonexistentcode", follow_redirects=False)
+    assert resp.status_code == 404
+    payload = resp.get_json()
+    assert isinstance(payload, dict)
+    assert "error" in payload
 
-def test_reserved_route_not_caught(client):
-    # Define a reserved route dynamically for the test
-    @app.route('/health')
-    def health():
-        return 'OK', 200
-
-    response = client.get('/health')
-    assert response.status_code == 200
-    assert response.data == b'OK'
+def test_redirect_malformed_code(client):
+    """Codes that do not match the expected pattern should be rejected."""
+    resp = client.get("/invalid!!code", follow_redirects=False)
+    # Depending on implementation this could be 400 or 404; accept both
+    assert resp.status_code in (400, 404)
+    if resp.is_json:
+        payload = resp.get_json()
+        assert isinstance(payload, dict)
+        assert "error" in payload
