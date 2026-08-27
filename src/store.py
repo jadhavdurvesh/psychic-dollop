@@ -1,31 +1,51 @@
-import threading
-from typing import Optional
+from threading import Lock
+from typing import List
+
+from src.models import Link
+
+# In‑memory storage; a real implementation would use a DB.
+_links: List[Link] = []
+_lock = Lock()
+_next_id = 1
 
 
-class URLStore:
+def add_link(
+    original_url: str,
+    short_code: str,
+    click_count: int = 0,
+    created_at: "datetime | None" = None,
+) -> Link:
     """
-    Thread‑safe in‑memory store for short_code → original_url mappings.
+    Create a new Link, assign a unique integer ``id`` and store it.
     """
-
-    def __init__(self) -> None:
-        self._store: dict[str, str] = {}
-        self._lock = threading.Lock()
-
-    def get(self, code: str) -> Optional[str]:
-        """Return the original URL for *code* or ``None`` if not present."""
-        with self._lock:
-            return self._store.get(code)
-
-    def set(self, code: str, url: str) -> None:
-        """Persist *code* → *url* mapping."""
-        with self._lock:
-            self._store[code] = url
-
-    def exists(self, code: str) -> bool:
-        """Check whether *code* already exists in the store."""
-        with self._lock:
-            return code in self._store
+    global _next_id
+    with _lock:
+        link = Link(
+            id=_next_id,
+            original_url=original_url,
+            short_code=short_code,
+            click_count=click_count,
+            created_at=created_at,
+        )
+        _links.append(link)
+        _next_id += 1
+    return link
 
 
-# A single global store instance used by the application.
-store = URLStore()
+def get_all_links_sorted() -> List[Link]:
+    """
+    Return all stored links sorted by ``click_count`` descending.
+    """
+    with _lock:
+        # ``sorted`` creates a new list; callers can modify it safely.
+        return sorted(_links, key=lambda l: l.click_count, reverse=True)
+
+
+def clear_links() -> None:
+    """
+    Helper used in tests to reset the in‑memory store.
+    """
+    global _links, _next_id
+    with _lock:
+        _links = []
+        _next_id = 1

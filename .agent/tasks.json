@@ -1,25 +1,25 @@
 [
   {
-    "title": "Add validation to POST /api/shorten",
-    "approach": "Introduce a URL validation helper in src/shorten_route.py using urllib.parse.urlparse. Update the POST handler to check for a JSON payload, presence of a 'url' field, ensure it is a non\u2011empty string, and verify the URL structure. Return a 400 response with a clear JSON error message when validation fails, otherwise proceed with existing shortening logic.",
+    "title": "Add GET /api/links endpoint to list shortened links sorted by click count",
+    "approach": "Create a new links_route Blueprint exposing GET /api/links, register it in app.py, add a store.get_all_links_sorted() helper that returns Link objects ordered by click_count descending, and ensure Link.to_dict() provides a JSON\u2011serializable representation. The route will convert each Link to a dict and return a JSON array.",
     "files_to_modify": [
-      "src/shorten_route.py",
-      "tests/test_app.py"
+      "src/app.py",
+      "src/store.py",
+      "src/models.py"
     ],
-    "files_to_create": [],
+    "files_to_create": [
+      "src/links_route.py"
+    ],
     "tests_to_write": [
-      "test_shorten_missing_body: send POST without JSON body and expect 400 with error about missing 'url'",
-      "test_shorten_missing_url_field: send JSON without 'url' key and expect 400 with appropriate error",
-      "test_shorten_empty_url_string: send {\"url\": \"\"} and expect 400 with error about non\u2011empty string",
-      "test_shorten_non_string_url: send {\"url\": 123} and expect 400 with error about URL must be a string",
-      "test_shorten_malformed_url: send {\"url\": \"not-a-valid-url\"} and expect 400 with error about malformed URL",
-      "test_shorten_valid_url: send a well\u2011formed URL and expect 201 with short_code in response"
+      "test_get_links_empty: Verify that GET /api/links returns 200 with an empty JSON array when no links exist.",
+      "test_get_links_ordering: Create multiple links with varying click_count values, then assert that the returned array is sorted in descending click_count order.",
+      "test_get_links_fields: Ensure each object in the response contains id, original_url, short_code, click_count, and created_at fields with correct types."
     ],
     "edge_cases": [
-      "Request body not JSON or missing Content-Type",
-      "URL with missing scheme or netloc (e.g., 'example.com')",
-      "URL containing whitespace only",
-      "Extremely long URLs (beyond typical length) \u2013 still treated as malformed if scheme/netloc missing"
+      "No links in the database \u2013 should return an empty list, not an error.",
+      "Database query failure \u2013 should return a 500 error with a generic message.",
+      "Link objects with null created_at \u2013 to_dict should handle None safely.",
+      "Potential circular import between store and models \u2013 keep imports inside functions if needed."
     ],
     "dependencies": []
   }
