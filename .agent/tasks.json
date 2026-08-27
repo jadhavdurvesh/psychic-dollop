@@ -1,25 +1,30 @@
 [
   {
-    "title": "Add GET /api/links endpoint to list shortened links sorted by click count",
-    "approach": "Create a new links_route Blueprint exposing GET /api/links, register it in app.py, add a store.get_all_links_sorted() helper that returns Link objects ordered by click_count descending, and ensure Link.to_dict() provides a JSON\u2011serializable representation. The route will convert each Link to a dict and return a JSON array.",
+    "title": "Add comprehensive pytest\u2011flask tests for link creation and redirect endpoints",
+    "approach": "Introduce a conftest fixture that clears the in\u2011memory store before each test to ensure isolation. Write new test modules covering the POST /links endpoint (happy path, missing/invalid payload, duplicate handling) and expand redirect tests for successful redirects, not\u2011found codes, and malformed codes. Use the pytest\u2011flask client fixture for HTTP calls and make assertions flexible for status codes and error messages.",
     "files_to_modify": [
-      "src/app.py",
-      "src/store.py",
-      "src/models.py"
+      "tests/test_redirect.py"
     ],
     "files_to_create": [
-      "src/links_route.py"
+      "tests/conftest.py",
+      "tests/test_links.py"
     ],
     "tests_to_write": [
-      "test_get_links_empty: Verify that GET /api/links returns 200 with an empty JSON array when no links exist.",
-      "test_get_links_ordering: Create multiple links with varying click_count values, then assert that the returned array is sorted in descending click_count order.",
-      "test_get_links_fields: Ensure each object in the response contains id, original_url, short_code, click_count, and created_at fields with correct types."
+      "test_links.py::test_create_link_happy_path \u2013 POST /links with a valid URL returns 201 and a short_url field.",
+      "test_links.py::test_create_link_missing_url \u2013 POST /links with no url returns 400 with a detail indicating the field is required.",
+      "test_links.py::test_create_link_invalid_url \u2013 POST /links with an invalid URL returns 400 and an error mentioning invalid URL.",
+      "test_links.py::test_create_duplicate_link_returns_same_short \u2013 posting the same URL twice returns identical short_url values (idempotent).",
+      "test_redirect.py::test_redirect_happy_path \u2013 after creating a link, GET /<code> returns a redirect (301/302/307) with Location header matching the original URL.",
+      "test_redirect.py::test_redirect_not_found \u2013 GET on a non\u2011existent short code returns 404 with appropriate detail.",
+      "test_redirect.py::test_redirect_invalid_code_format \u2013 GET on a malformed short code returns either 400 or 404, asserting proper handling."
     ],
     "edge_cases": [
-      "No links in the database \u2013 should return an empty list, not an error.",
-      "Database query failure \u2013 should return a 500 error with a generic message.",
-      "Link objects with null created_at \u2013 to_dict should handle None safely.",
-      "Potential circular import between store and models \u2013 keep imports inside functions if needed."
+      "Missing required 'url' field in request payload.",
+      "Invalid URL format (e.g., not a proper scheme).",
+      "Duplicate URL submissions should yield the same short code.",
+      "Lookup of a short code that does not exist in the store.",
+      "Malformed short code strings (special characters, empty string).",
+      "Potential collisions in short code generation (handled by shortener logic)."
     ],
     "dependencies": []
   }
