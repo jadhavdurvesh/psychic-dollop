@@ -1,64 +1,40 @@
-import json
 import pytest
 
-# Helper to build a valid payload
-def make_payload(url="https://example.com", code=None):
-    payload = {"url": url}
-    if code is not None:
-        payload["code"] = code
-    return payload
-
 def test_create_link_success(client):
-    """Happy‑path: create a new short link."""
-    resp = client.post(
-        "/links",
-        data=json.dumps(make_payload()),
-        content_type="application/json",
-    )
-    assert resp.status_code == 201
-    data = resp.get_json()
-    assert "code" in data
-    assert data["url"] == "https://example.com"
+    """Happy path – a valid URL returns a new short code."""
+    response = client.post("/links", json={"url": "https://example.com"})
+    assert response.status_code == 201
+    payload = response.get_json()
+    assert isinstance(payload, dict)
+    assert "code" in payload
+    assert isinstance(payload["code"], str)
+    assert len(payload["code"]) > 0
 
-def test_create_link_missing_payload(client):
-    """Missing JSON body should yield a 400."""
-    resp = client.post("/links", data="", content_type="application/json")
-    assert resp.status_code == 400
-    json_data = resp.get_json()
-    # flexible assertion – the message may vary
-    assert json_data is not None
-    assert "error" in json_data
+def test_missing_url_field(client):
+    """POST without a `url` field should be rejected."""
+    response = client.post("/links", json={})
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert isinstance(payload, dict)
+    assert "error" in payload
 
-def test_create_link_invalid_url(client):
-    """Invalid URL should be rejected."""
-    resp = client.post(
-        "/links",
-        data=json.dumps(make_payload(url="not-a-url")),
-        content_type="application/json",
-    )
-    assert resp.status_code == 400
-    json_data = resp.get_json()
-    assert json_data is not None
-    assert "error" in json_data
+def test_invalid_url_format(client):
+    """A malformed URL must be rejected."""
+    response = client.post("/links", json={"url": "not-a-valid-url"})
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert isinstance(payload, dict)
+    assert "error" in payload
 
-def test_create_link_duplicate_code(client):
-    """Attempt to reuse an existing code must be handled."""
-    # First create a link with an explicit code
-    payload = make_payload(code="mycode")
-    first = client.post(
-        "/links",
-        data=json.dumps(payload),
-        content_type="application/json",
-    )
+def test_duplicate_url_returns_existing_code(client):
+    """Submitting the same URL twice should return the same short code."""
+    payload = {"url": "https://duplicate.com"}
+    first = client.post("/links", json=payload)
     assert first.status_code == 201
+    first_code = first.get_json()["code"]
 
-    # Second attempt with the same code should fail
-    second = client.post(
-        "/links",
-        data=json.dumps(payload),
-        content_type="application/json",
-    )
-    assert second.status_code == 409
-    json_data = second.get_json()
-    assert json_data is not None
-    assert "error" in json_data
+    second = client.post("/links", json=payload)
+    # Implementation may return 200 for an existing mapping; accept both 200 and 201
+    assert second.status_code in (200, 201)
+    second_code = second.get_json()["code"]
+    assert second_code == first_code

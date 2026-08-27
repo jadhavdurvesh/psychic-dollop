@@ -1,20 +1,13 @@
 import pytest
-from app import create_app, reset_store
+from app import app as flask_app
+from store import store
 
 @pytest.fixture
 def app():
-    """
-    Provide a Flask app instance for pytest‑flask.
-    """
-    app = create_app()
-    # Ensure the store is cleared for each test run
-    with app.app_context():
-        reset_store()
-    yield app
+    """Provide the Flask application instance to pytest‑flask."""
+    return flask_app
 
 @pytest.fixture(autouse=True)
 def clear_store():
-    """
-    Automatically clear the in‑memory store before every test function.
-    """
-    reset_store()
+    """Clear the in‑memory store before each test to guarantee isolation."""
+    store.clear()
