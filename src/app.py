@@ -1,16 +1,39 @@
-from flask import Flask
+from flask import Flask, request, jsonify, redirect, abort
+from src.store import add_link, get_link, clear_store
 
-from .store import init_db
-from .links_route import links_bp
+app = Flask(__name__)
 
-def create_app():
-    app = Flask(__name__)
+@app.route("/links", methods=["POST"])
+def create_link():
+    if not request.is_json:
+        return jsonify(error="Request body must be JSON"), 400
+    data = request.get_json()
+    url = data.get("url")
+    code = data.get("code")
 
-    # Initialise the database (tables, etc.)
-    init_db()
+    if not url:
+        return jsonify(error="Missing 'url' in request payload"), 400
 
-    # Register blueprints / routes
-    app.register_blueprint(links_bp)
+    # Basic validation for URL – can be expanded
+    if not (url.startswith("http://") or url.startswith("https://")):
+        return jsonify(error="Invalid URL format"), 400
 
-    # If there are other blueprints they would be registered here as well.
-    return app
+    try:
+        stored_code = add_link(url, code)
+    except ValueError as exc:
+        return jsonify(error=str(exc)), 409
+
+    return jsonify(code=stored_code, url=url), 201
+
+@app.route("/<string:code>", methods=["GET"])
+def resolve(code):
+    link = get_link(code)
+    if not link:
+        return jsonify(error="Link not found"), 404
+    return redirect(link, code=302)
+
+# Expose a utility for tests if needed
+@app.route("/_reset", methods=["POST"])
+def reset():
+    clear_store()
+    return "", 204

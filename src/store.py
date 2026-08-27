@@ -1,51 +1,32 @@
-from threading import Lock
-from typing import List
+from typing import Dict
 
-from src.models import Link
+_links: Dict[str, str] = {}
+import uuid
 
-# In‑memory storage; a real implementation would use a DB.
-_links: List[Link] = []
-_lock = Lock()
-_next_id = 1
+def _generate_code() -> str:
+    return uuid.uuid4().hex[:6]
 
+def add_link(url: str, code: str = None) -> str:
+    """Add a URL to the store. Returns the short code.
 
-def add_link(
-    original_url: str,
-    short_code: str,
-    click_count: int = 0,
-    created_at: "datetime | None" = None,
-) -> Link:
+    Raises:
+        ValueError: If the provided code already exists.
     """
-    Create a new Link, assign a unique integer ``id`` and store it.
-    """
-    global _next_id
-    with _lock:
-        link = Link(
-            id=_next_id,
-            original_url=original_url,
-            short_code=short_code,
-            click_count=click_count,
-            created_at=created_at,
-        )
-        _links.append(link)
-        _next_id += 1
-    return link
+    if code:
+        if code in _links:
+            raise ValueError("Code already exists")
+        _links[code] = url
+        return code
+    # generate a unique code
+    while True:
+        gen = _generate_code()
+        if gen not in _links:
+            _links[gen] = url
+            return gen
 
+def get_link(code: str) -> str:
+    return _links.get(code)
 
-def get_all_links_sorted() -> List[Link]:
-    """
-    Return all stored links sorted by ``click_count`` descending.
-    """
-    with _lock:
-        # ``sorted`` creates a new list; callers can modify it safely.
-        return sorted(_links, key=lambda l: l.click_count, reverse=True)
-
-
-def clear_links() -> None:
-    """
-    Helper used in tests to reset the in‑memory store.
-    """
-    global _links, _next_id
-    with _lock:
-        _links = []
-        _next_id = 1
+def clear_store() -> None:
+    """Remove all entries – used by test fixtures."""
+    _links.clear()

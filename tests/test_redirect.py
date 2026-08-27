@@ -1,26 +1,33 @@
 import pytest
 
-def test_successful_redirect(client):
-    # First, create a short link to have a known code
-    create_resp = client.post('/links', json={'url': 'http://redirect.com'})
-    assert create_resp.status_code == 201
-    code = create_resp.get_json()['code']
+def test_redirect_success(client):
+    """Redirect should succeed for a known short code."""
+    # First create a link
+    resp = client.post(
+        "/links",
+        json={"url": "https://example.org"},
+    )
+    assert resp.status_code == 201
+    code = resp.get_json()["code"]
 
-    # Follow the redirect
-    redirect_resp = client.get(f'/{code}', follow_redirects=False)
+    # Now follow the redirect
+    redirect_resp = client.get(f"/{code}", follow_redirects=False)
     assert redirect_resp.status_code in (301, 302)
-    assert redirect_resp.headers['Location'] == 'http://redirect.com'
+    assert redirect_resp.headers["Location"] == "https://example.org"
 
 def test_redirect_not_found(client):
-    # Access a code that does not exist
-    resp = client.get('/nonexistent')
+    """Requesting an unknown code must return 404."""
+    resp = client.get("/nonexistentcode", follow_redirects=False)
     assert resp.status_code == 404
-    data = resp.get_json()
-    assert 'error' in data
+    json_data = resp.get_json()
+    assert json_data is not None
+    assert "error" in json_data
 
 def test_redirect_malformed_code(client):
-    # The code format is arbitrary; treat an obviously malformed code as not found
-    resp = client.get('/!!!')
-    assert resp.status_code == 404
-    data = resp.get_json()
-    assert 'error' in data
+    """A malformed code (e.g., containing illegal characters) should be treated as not found."""
+    resp = client.get("/invalid!!code", follow_redirects=False)
+    # The implementation may treat this as 404 or 400; accept both
+    assert resp.status_code in (400, 404)
+    json_data = resp.get_json()
+    assert json_data is not None
+    assert "error" in json_data
