@@ -1,18 +1,20 @@
 import pytest
-from app import app, db
+from app import create_app, reset_store
 
 @pytest.fixture
-def client():
+def app():
     """
-    Provides a Flask test client for making HTTP requests.
+    Provide a Flask app instance for pytest‑flask.
     """
-    with app.test_client() as client:
-        yield client
+    app = create_app()
+    # Ensure the store is cleared for each test run
+    with app.app_context():
+        reset_store()
+    yield app
 
 @pytest.fixture(autouse=True)
-def clear_in_memory_store():
+def clear_store():
     """
-    Clears the in‑memory link store before each test to guarantee isolation.
+    Automatically clear the in‑memory store before every test function.
     """
-    db["url_to_code"].clear()
-    db["code_to_url"].clear()
+    reset_store()
