@@ -2,36 +2,36 @@
 
 A brief description of what this project does and who it's for.
 
-## Getting Started
+## Table of Contents
 
-Instructions for setting up the project locally.
+- [Installation](#installation)
+- [Usage](#usage)
+- [License](#license)
+- [Code of Conduct](#code-of-conduct)
+- [Contributing](#contributing)
+- [Tests](#tests)
 
-```bash
-git clone https://github.com/yourusername/yourproject.git
-cd yourproject
-# install dependencies, etc.
-```
+## Installation
+
+Instructions for installing the project.
 
 ## Usage
 
-How to use the project.
+Instructions for using the project.
+
+## License
+
+This project is licensed under the **DMJ Community License (DCL) 1.0**.  
+See the full license text in the [LICENSE](LICENSE) file.
+
+## Code of Conduct
+
+Please read our [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) to understand the expectations for participant behavior.
 
 ## Contributing
 
 Guidelines for contributing to the project.
 
-## License
-
-This project is licensed under the **DMJ Community License (DCL) 1.0**. See the [LICENSE](LICENSE) file for details.
-
-## Code of Conduct
-
-Please read our [Code of Conduct](CODE_OF_CONDUCT.md) to understand the expectations for participant behavior.
-
 ## Tests
 
-Run the test suite with:
-
-```bash
-pytest
-```
+How to run the test suite.

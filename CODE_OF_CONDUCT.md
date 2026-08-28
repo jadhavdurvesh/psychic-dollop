@@ -2,28 +2,33 @@
 
 ## Our Pledge
 
-We as members, contributors, and leaders pledge to make participation in our community a harassment‑free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
+We as members, contributors, and leaders pledge to make participation in this project a harassment‑free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
 
 ## Our Standards
 
-Examples of behavior that contributes to a positive environment for our community include:
+Examples of behavior that contributes to a positive environment include:
 
-* Demonstrating empathy and kindness toward other people.
-* Being respectful of differing opinions, viewpoints, and experiences.
-* Giving and gracefully accepting constructive feedback.
-* Accepting responsibility and apologizing to those affected by our mistakes, and learning from them.
+* Using welcoming and inclusive language
+* Being respectful of differing viewpoints and experiences
+* Gracefully accepting constructive criticism
+* Focusing on what is best for the community
+* Showing empathy towards other community members
 
-Unacceptable behavior includes:
+Examples of unacceptable behavior include:
 
-* The use of sexualized language or imagery and unwelcome sexual attention or advances.
-* Trolling, insulting or harassing comments, or personal or political attacks.
-* Public or private harassment.
-* Publishing others’ private information, such as a home address or phone number, without explicit permission.
-* Any other conduct which could reasonably be considered inappropriate in a professional setting.
+* The use of sexualized language or imagery and unwelcome sexual attention or advances
+* Trolling, insulting or harassing comments, or personal or political attacks
+* Public or private harassment
+* Publishing others’ private information, such as a physical or email address, without explicit permission
+* Any other conduct which could reasonably be considered inappropriate in a professional setting
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at **conduct@example.com**. All complaints will be reviewed and investigated and will result in a response that is deemed necessary and appropriate to the circumstances. The project team is obligated to maintain confidentiality with regard to the reporter of an incident.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project maintainers at **conduct@dmj.org**. All complaints will be reviewed and investigated promptly and fairly.
+
+Project maintainers are obligated to:
+* Take any action they deem appropriate, including warning the offender or expulsion from the project
+* Follow up with the reporter to inform them of the outcome
 
 ## Attribution
 
