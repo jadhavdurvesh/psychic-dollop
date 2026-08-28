@@ -1,114 +1,58 @@
-# Project Title
+# Multi-Agent Coding System
 
-*Brief description of what the project does and its primary goals.*
+## Introduction
+Welcome to the **Multi-Agent Coding System**, a framework that orchestrates multiple specialized agents to collaboratively solve coding tasks. By leveraging the strengths of each agent—ranging from code generation and debugging to documentation and testing—the system provides a seamless, end‑to‑end development experience.
 
 ## Table of Contents
-
-- [Introduction](#introduction)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Examples](#examples)
 - [Philosophy](#philosophy)
 - [Authors](#authors)
-- [License](#license)
-
-## Introduction
-
-Welcome to **Project Title**! This repository provides a robust solution for **[briefly describe the problem domain]**. Designed with simplicity and extensibility in mind, it enables developers to **[key capability]** with minimal configuration.
-
-### Features
-
-- ✅ Feature 1: *Short description*
-- ✅ Feature 2: *Short description*
-- ✅ Feature 3: *Short description*
 
 ## Installation
-
-The project is built with Python and can be installed using `pip`. Follow the steps below:
-
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/project-title.git
-cd project-title
+git clone https://github.com/yourusername/multi-agent-coding-system.git
+cd multi-agent-coding-system
 
-# (Optional) Create a virtual environment
-python -m venv venv
-source venv/bin/activate   # On Windows use `venv\Scripts\activate`
-
-# Install dependencies
+# Install required dependencies
 pip install -r requirements.txt
 ```
 
-> **Note:** The package requires Python **3.8+**.
+> **Note:** The project requires Python 3.9 or newer.
 
 ## Usage
-
-After installation, you can run the main entry point directly:
-
-```bash
-python -m project_title
-```
-
-Or, if the project provides a CLI:
+Run the main entry point to start the orchestrator:
 
 ```bash
-project-title --help
+python -m src.main
 ```
 
-### Configuration
+You can also invoke individual agents directly for debugging or custom workflows:
 
-Configuration is managed via a `config.yaml` file located in the project root. Example:
-
-```yaml
-setting_a: true
-setting_b: 10
-output_path: "./results"
+```bash
+python -m agents.codegen <input_prompt>
+python -m agents.debugger <source_file>
 ```
+
+Configuration options are stored in `config.yaml`. Adjust the model parameters, logging level, and agent routing as needed.
 
 ## Examples
-
-Below are a few common use‑cases to help you get started.
-
-### Example 1: Basic Run
-
+### Simple Function Generation
 ```bash
-project-title run --input data/input.csv --output results/output.csv
+python -m agents.codegen "Write a Python function that returns the nth Fibonacci number."
 ```
+The system will generate the function, run a quick sanity test, and output the final code.
 
-### Example 2: Advanced Mode
-
+### Automated Refactoring
 ```bash
-project-title run --mode advanced --threshold 0.75
+python -m agents.refactor my_script.py
 ```
-
-For a full list of commands and options, run:
-
-```bash
-project-title --help
-```
+The refactor agent analyzes `my_script.py`, applies style improvements, and writes the updated file back to disk.
 
 ## Philosophy
-
-Our guiding principles shape every line of code:
-
-1. **Simplicity Over Complexity** – Keep the API intuitive and the internals readable.
-2. **Extensibility** – Design modules that can be easily swapped or extended.
-3. **Transparency** – Provide clear logging and documentation so users understand what’s happening under the hood.
-4. **Reliability** – Write thorough tests and enforce strict type checking to ensure consistent behavior across environments.
-
-By adhering to these principles, we aim to create a tool that not only solves today's problems but also adapts to tomorrow's challenges.
+The core philosophy of this project is **collaborative intelligence**—treating each specialized agent as a team member that contributes its expertise toward a shared goal. By decomposing complex problems into smaller, manageable tasks, the system achieves higher reliability, better code quality, and faster iteration cycles. This modular design also encourages extensibility: new agents can be added without disrupting existing workflows.
 
 ## Authors
-
-- **Durvesh M. Jadhav** – *Project Lead & Core Developer*  
-  [GitHub Profile](https://github.com/durveshj)
-
-Additional contributors are listed in the [CONTRIBUTORS.md](CONTRIBUTORS.md) file.
-
-## License
-
-This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.
-
----
-
-*Happy coding!*
+Durvesh M. Jadhav
