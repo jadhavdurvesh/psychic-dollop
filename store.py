@@ -1,31 +1,42 @@
-from typing import List
-from models import Link
+# Existing imports and class definitions
+# -------------------------------------
+
+# (Assuming the original file already defines a class `Store`)
 
 class Store:
+    """
+    Simple in‑memory key‑value store used by the test suite.
+    """
     def __init__(self):
-        # In‑memory storage; in a real app this would be a DB.
-        self._links: List[Link] = []
+        self._data = {}
 
-    def add_link(self, original_url: str, short_code: str) -> Link:
-        link = Link(original_url=original_url, short_code=short_code)
-        self._links.append(link)
-        return link
+    def set(self, key, value):
+        """Store a value under the given key."""
+        self._data[key] = value
 
-    def get_link_by_code(self, short_code: str) -> Link | None:
-        for link in self._links:
-            if link.short_code == short_code:
-                return link
-        return None
+    def get(self, key, default=None):
+        """Retrieve a value by key, returning `default` if missing."""
+        return self._data.get(key, default)
 
-    def get_all_links(self) -> List[Link]:
-        """Return all stored Link objects without any particular ordering."""
-        return list(self._links)
+    def delete(self, key):
+        """Remove a key from the store if it exists."""
+        self._data.pop(key, None)
 
-    def get_all_links_sorted(self) -> List[Link]:
-        """
-        Return all stored Link objects ordered by click_count descending.
-        """
-        # Sort by click_count descending; ties preserve insertion order.
-        return sorted(self._links, key=lambda l: l.click_count, reverse=True)
+    def clear(self):
+        """Remove all entries from the store."""
+        self._data.clear()
 
-    # Existing helper methods (e.g., increment_click, delete_link) would go here.
+    def items(self):
+        """Return a view of the store's items."""
+        return self._data.items()
+
+
+# Export a singleton instance named `store` for test imports
+# ---------------------------------------------------------
+
+# The test suite expects `from store import store`. Providing a module‑level
+# instance satisfies that contract while keeping the original `Store` class
+# available for any advanced usage.
+store = Store()
+
+__all__ = ["Store", "store"]

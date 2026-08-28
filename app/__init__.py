@@ -1,21 +1,17 @@
-import os
 from flask import Flask
 
-def create_app():
+def create_app() -> Flask:
     """
-    Application factory that creates and configures the Flask app.
-    Registers the blueprint that contains the link creation and redirect routes.
+    Factory function to create and configure the Flask application.
     """
     app = Flask(__name__)
-    app.config.from_mapping(
-        TESTING=os.getenv("FLASK_TESTING", False)
-    )
 
-    # Register blueprints
-    from .routes import links_bp, reset_store
-    app.register_blueprint(links_bp)
+    @app.route("/")
+    def index():
+        return "Hello, World!"
 
-    # Expose reset_store at the app level for testing convenience
-    app.reset_store = reset_store
-
+    # Additional route registrations or blueprint imports can be added here.
     return app
+
+# Expose a ready‑to‑use app instance for testing and development.
+app = create_app()

@@ -1,30 +1,17 @@
 [
   {
-    "title": "Add comprehensive pytest\u2011flask tests for link creation and redirect endpoints",
-    "approach": "Introduce a conftest fixture that clears the in\u2011memory store before each test to ensure isolation. Write new test modules covering the POST /links endpoint (happy path, missing/invalid payload, duplicate handling) and expand redirect tests for successful redirects, not\u2011found codes, and malformed codes. Use the pytest\u2011flask client fixture for HTTP calls and make assertions flexible for status codes and error messages.",
+    "title": "Expand README with detailed sections, philosophy, and author credit",
+    "approach": "Edit README.md to add a richer introduction, installation, usage, examples, a Table of Contents, a new Philosophy section, and an Authors section crediting Durvesh M. Jadhav. Ensure proper Markdown hierarchy and formatting. No code changes required.",
     "files_to_modify": [
-      "tests/test_redirect.py"
+      "README.md"
     ],
-    "files_to_create": [
-      "tests/conftest.py",
-      "tests/test_links.py"
-    ],
+    "files_to_create": [],
     "tests_to_write": [
-      "test_links.py::test_create_link_happy_path \u2013 POST /links with a valid URL returns 201 and a short_url field.",
-      "test_links.py::test_create_link_missing_url \u2013 POST /links with no url returns 400 with a detail indicating the field is required.",
-      "test_links.py::test_create_link_invalid_url \u2013 POST /links with an invalid URL returns 400 and an error mentioning invalid URL.",
-      "test_links.py::test_create_duplicate_link_returns_same_short \u2013 posting the same URL twice returns identical short_url values (idempotent).",
-      "test_redirect.py::test_redirect_happy_path \u2013 after creating a link, GET /<code> returns a redirect (301/302/307) with Location header matching the original URL.",
-      "test_redirect.py::test_redirect_not_found \u2013 GET on a non\u2011existent short code returns 404 with appropriate detail.",
-      "test_redirect.py::test_redirect_invalid_code_format \u2013 GET on a malformed short code returns either 400 or 404, asserting proper handling."
+      "None needed \u2013 documentation change only; verify that the repository still builds and that CI passes without README-related lint failures."
     ],
     "edge_cases": [
-      "Missing required 'url' field in request payload.",
-      "Invalid URL format (e.g., not a proper scheme).",
-      "Duplicate URL submissions should yield the same short code.",
-      "Lookup of a short code that does not exist in the store.",
-      "Malformed short code strings (special characters, empty string).",
-      "Potential collisions in short code generation (handled by shortener logic)."
+      "Ensure Markdown renders correctly (no unclosed code fences, proper heading levels). Avoid adding large binary assets that could inflate repo size.",
+      "Confirm author name spelling exactly as 'Durvesh M. Jadhav'."
     ],
     "dependencies": []
   }
