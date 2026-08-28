@@ -1,17 +1,24 @@
 [
   {
-    "title": "Expand README with detailed sections, philosophy, and author credit",
-    "approach": "Edit README.md to add a richer introduction, installation, usage, examples, a Table of Contents, a new Philosophy section, and an Authors section crediting Durvesh M. Jadhav. Ensure proper Markdown hierarchy and formatting. No code changes required.",
+    "title": "Add DMJ Community License and Code of Conduct",
+    "approach": "Create a new LICENSE file containing the custom DMJ Community License (DCL) text and a CODE_OF_CONDUCT.md describing community expectations. Update README.md to reference both files. Optionally adjust CI to only verify file existence. No code changes required.",
     "files_to_modify": [
-      "README.md"
+      "README.md",
+      ".github/workflows/seed-tasks.yml"
     ],
-    "files_to_create": [],
+    "files_to_create": [
+      "LICENSE",
+      "CODE_OF_CONDUCT.md"
+    ],
     "tests_to_write": [
-      "None needed \u2013 documentation change only; verify that the repository still builds and that CI passes without README-related lint failures."
+      "Test that a file named LICENSE exists at the repository root and contains the phrase \"DMJ Community License\".",
+      "Test that CODE_OF_CONDUCT.md exists and includes a \"## Expected Behavior\" heading.",
+      "Test that README.md contains a \"License\" section linking to the LICENSE file.",
+      "Test that README.md contains a \"Code of Conduct\" section linking to CODE_OF_CONDUCT.md."
     ],
     "edge_cases": [
-      "Ensure Markdown renders correctly (no unclosed code fences, proper heading levels). Avoid adding large binary assets that could inflate repo size.",
-      "Confirm author name spelling exactly as 'Durvesh M. Jadhav'."
+      "CI workflow that checks for a specific SPDX identifier may fail because DCL is custom; ensure the CI step only checks for file existence or add a generic SPDX tag comment.",
+      "If future packaging (pyproject.toml/setup.cfg) is added, the license field must be set to \"DCL\" to avoid metadata mismatch."
     ],
     "dependencies": []
   }

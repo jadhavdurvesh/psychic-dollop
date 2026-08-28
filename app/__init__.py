@@ -1,17 +1,19 @@
-from flask import Flask
+"""Top-level package for the application."""
 
-def create_app() -> Flask:
+def greet(name: str = "World") -> str:
     """
-    Factory function to create and configure the Flask application.
+    Return a friendly greeting message.
+
+    Parameters
+    ----------
+    name : str, optional
+        Name to include in the greeting. Defaults to "World".
+
+    Returns
+    -------
+    str
+        Greeting string.
     """
-    app = Flask(__name__)
+    return f"Hello, {name}!"
 
-    @app.route("/")
-    def index():
-        return "Hello, World!"
-
-    # Additional route registrations or blueprint imports can be added here.
-    return app
-
-# Expose a ready‑to‑use app instance for testing and development.
-app = create_app()
+__all__ = ["greet"]
