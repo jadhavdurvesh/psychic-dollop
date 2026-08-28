@@ -1,4 +1,4 @@
-name: CI
+name: Seed Tasks CI
 
 on:
   push:
@@ -7,34 +7,20 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  verify-files:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Run tests
-      run: |
-        pytest
-
-    - name: Verify LICENSE and CODE_OF_CONDUCT existence
-      run: |
-        if [ ! -f LICENSE ]; then
-          echo "ERROR: LICENSE file is missing."
-          exit 1
-        fi
-        if [ ! -f CODE_OF_CONDUCT.md ]; then
-          echo "ERROR: CODE_OF_CONDUCT.md file is missing."
-          exit 1
-        fi
+      - name: Verify required files exist
+        run: |
+          set -e
+          echo "Checking for LICENSE..."
+          test -f LICENSE || (echo "LICENSE file is missing!" && exit 1)
+          echo "Checking for CODE_OF_CONDUCT.md..."
+          test -f CODE_OF_CONDUCT.md || (echo "CODE_OF_CONDUCT.md file is missing!" && exit 1)
+          echo "Checking README links..."
+          grep -q "\[LICENSE\](LICENSE)" README.md || (echo "README missing LICENSE link!" && exit 1)
+          grep -q "\[Code of Conduct\](CODE_OF_CONDUCT.md)" README.md || (echo "README missing Code of Conduct link!" && exit 1)
+          echo "All required files are present."

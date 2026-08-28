@@ -1,37 +1,25 @@
 # Project Title
 
-A brief description of what this project does and who it's for.
-
-## Table of Contents
-
-- [Installation](#installation)
-- [Usage](#usage)
-- [License](#license)
-- [Code of Conduct](#code-of-conduct)
-- [Contributing](#contributing)
-- [Tests](#tests)
+A brief description of what this project does and who it’s for.
 
 ## Installation
 
-Instructions for installing the project.
+Instructions on how to install and set up the project.
 
 ## Usage
 
-Instructions for using the project.
-
-## License
-
-This project is licensed under the **DMJ Community License (DCL) 1.0**.  
-See the full license text in the [LICENSE](LICENSE) file.
-
-## Code of Conduct
-
-Please read our [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) to understand the expectations for participant behavior.
+Examples of how to use the project.
 
 ## Contributing
 
 Guidelines for contributing to the project.
 
-## Tests
+## License
 
-How to run the test suite.
+This project is licensed under the DMJ Community License (DCL). See the
+[LICENSE](LICENSE) file for the full text.
+
+## Code of Conduct
+
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) to understand the
+expectations for participants in this community.
