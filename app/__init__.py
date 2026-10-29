@@ -1,4 +1,9 @@
-"""Top-level package for the application."""
+"""
+App package initialization.
+
+Provides a simple greeting function used throughout the project
+and by the test suite.
+"""
 
 def greet(name: str = "World") -> str:
     """
@@ -7,13 +12,11 @@ def greet(name: str = "World") -> str:
     Parameters
     ----------
     name : str, optional
-        Name to include in the greeting. Defaults to "World".
+        The name to include in the greeting. Defaults to "World".
 
     Returns
     -------
     str
-        Greeting string.
+        Greeting string in the format ``"Hello, {name}!"``.
     """
     return f"Hello, {name}!"
-
-__all__ = ["greet"]
