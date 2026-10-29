@@ -1,24 +1,23 @@
 [
   {
-    "title": "Add DMJ Community License and Code of Conduct",
-    "approach": "Create a new LICENSE file containing the custom DMJ Community License (DCL) text and a CODE_OF_CONDUCT.md describing community expectations. Update README.md to reference both files. Optionally adjust CI to only verify file existence. No code changes required.",
+    "title": "Expand README with full project documentation",
+    "approach": "Create a backup of the current README, then programmatically gather content from architecture, entry point, requirements, routing, models, store, CI workflow, and other meta files. Assemble a structured Markdown file with badges, TOC, architecture diagram, installation, usage, API reference, data model, persistence, testing guide, contribution/CI notes, and licensing links. Replace the original README with the generated version and ensure all relative links are correct.",
     "files_to_modify": [
-      "README.md",
-      ".github/workflows/seed-tasks.yml"
+      "README.md"
     ],
     "files_to_create": [
-      "LICENSE",
-      "CODE_OF_CONDUCT.md"
+      "README.backup.md"
     ],
     "tests_to_write": [
-      "Test that a file named LICENSE exists at the repository root and contains the phrase \"DMJ Community License\".",
-      "Test that CODE_OF_CONDUCT.md exists and includes a \"## Expected Behavior\" heading.",
-      "Test that README.md contains a \"License\" section linking to the LICENSE file.",
-      "Test that README.md contains a \"Code of Conduct\" section linking to CODE_OF_CONDUCT.md."
+      "test_readme_structure.py: verifies that the generated README contains required sections (Title, Badges, Table of Contents, Installation, Usage, API Reference, Data Model, Persistence, Testing, CI/Contributing, License).",
+      "test_readme_links.py: checks that all relative markdown links in README resolve to existing files in the repository.",
+      "test_readme_backup.py: ensures that a backup file README.backup.md is created before the README is overwritten."
     ],
     "edge_cases": [
-      "CI workflow that checks for a specific SPDX identifier may fail because DCL is custom; ensure the CI step only checks for file existence or add a generic SPDX tag comment.",
-      "If future packaging (pyproject.toml/setup.cfg) is added, the license field must be set to \"DCL\" to avoid metadata mismatch."
+      "Missing .agent/architecture.md \u2013 fallback to a minimal textual architecture description.",
+      "Both app.py and src/app.py exist \u2013 detect which entry point is used in the project (by checking if __main__ block runs) and document the correct command.",
+      "Requirements.txt is empty or missing \u2013 provide a graceful note indicating manual dependency installation.",
+      "No LICENSE or CODE_OF_CONDUCT files \u2013 skip badge generation and add a placeholder notice."
     ],
     "dependencies": []
   }

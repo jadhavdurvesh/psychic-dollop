@@ -1,156 +1,100 @@
-## 1. Repository Architecture (quick view)
+## 1. Relevant Architecture  
 
-| Area | What it does |
-|------|--------------|
-| **`src/`** | Core implementation (shortener, routes, models, app entry point). |
-| **`app/`** | Thin Flask‑style wrapper that pulls the routes together (`app/routes.py`). |
-| **`routes/`** | Alternative location for route definitions (`links_route.py`). |
-| **`tests/`** | Pytest suite (`test_app.py`, `test_links.py`, `test_redirect.py`). |
-| **Root** | Project metadata (`README.md`, `.gitignore`, `requirements.txt`). |
-| **`.agent/`** | Internal tooling – not part of the runtime. |
+The project is a tiny URL‑shortening service built with **FastAPI** (or Flask‑style routing) and a small persistence layer.  
 
-The repository is **not packaged** (no `setup.cfg`, `pyproject.toml`, or `setup.py`). Adding a license therefore only requires adding static files and optionally updating the README – no code changes are needed.
+| Layer | Purpose | Key modules |
+|-------|---------|-------------|
+| **Entry point** | Starts the web server | `app.py`, `src/app.py` |
+| **Routing** | Defines HTTP endpoints for creating short links, retrieving them, and redirecting | `app/routes.py`, `routes/links_route.py`, `src/links_route.py`, `src/shorten_route.py`, `src/redirect_route.py` |
+| **Models / Data** | Pydantic/ORM definitions for a `Link` object and persistence helpers | `models.py`, `models/link.py`, `src/models.py`, `store.py`, `src/store.py` |
+| **Business logic** | Generates short codes, stores/retrieves links | `src/shortener.py` |
+| **Tests** | Unit/integration coverage of API behaviour | `tests/*.py` |
+| **Meta / CI** | CI workflow, task tracking, architecture notes | `.github/workflows/seed-tasks.yml`, `.agent/architecture.md`, `TASKS.md` |
+
+The repository already contains a minimal `README.md` (the file we will replace/extend) and a richer architecture description in `.agent/architecture.md`. Those two are the primary sources for the new “big” README.
 
 ---
 
-## 2. Files that need to be added / touched
+## 2. Files that must be touched  
 
-| File | Reason |
+| Path | Reason |
 |------|--------|
-| **`LICENSE`** (new) | Holds the custom *DMJ Community License (DCL)* text. |
-| **`CODE_OF_CONDUCT.md`** (new) | Outlines community expectations and references DCL. |
-| **`README.md`** (modify) | Add a badge/section that points to the new license and code of conduct. |
-| **`.github/workflows/seed-tasks.yml`** (optional) | If the CI workflow validates the presence of a `LICENSE` file, update the step accordingly. |
-| **`requirements.txt`** (no change) | No dependency impact. |
-| **Any source file header** (optional) | If you want to prepend a short SPDX‑like notice, add a comment line to each `*.py`. This is *optional* and does **not** affect runtime. |
+| `README.md` | This is the target file – we will rewrite it with the full documentation. |
+| `.agent/architecture.md` | Contains a concise diagram / description; copy‑paste relevant sections. |
+| `app.py` / `src/app.py` | Provide a short “Running the app” snippet (how to start the server). |
+| `requirements.txt` | List of dependencies – to be displayed in a “Installation” section. |
+| `tests/` (especially `tests/test_app.py`, `tests/test_links.py`, `tests/test_redirect.py`) | Show example usage & explain test coverage. |
+| `models/` and `src/models.py` | Document the data schema (`Link`). |
+| `store.py` / `src/store.py` | Explain persistence (in‑memory vs file/DB). |
+| `.github/workflows/seed-tasks.yml` | Mention CI pipeline (lint, test). |
+| `TASKS.md` | Briefly reference the project’s roadmap. |
+| `CODE_OF_CONDUCT.md`, `LICENSE` | Add badges / licensing info. |
 
-*All other files remain untouched.*
-
----
-
-## 3. What to change & how to do it
-
-### 3.1. Create `LICENSE`
-
-```text
-DMJ Community License (DCL)
-Version 1.0 – 2026-08-28
-
-Copyright (c) 2026 DMJ Community
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to
-use, copy, modify, and distribute the Software **provided that**:
-
-1. **Attribution** – The original authors must be credited in any redistributed
-   version (including forks, binaries, or compiled artifacts).
-
-2. **No Unlicensed Duplication** – The Software may not be copied,
-   redistributed, or sold as part of a commercial product **without an explicit
-   written permission** from the copyright holder.
-
-3. **Modification Disclosure** – All modified versions must carry a
-   clear notice of the changes and retain this license text.
-
-4. **Prohibition of Re‑licensing** – The Software may not be relicensed
-   under a different license without prior written consent.
-
-5. **Patent Grant** – The copyright holder grants a non‑exclusive,
-   worldwide, royalty‑free patent license to the extent necessary to
-   use the Software as permitted herein.
-
-6. **Termination** – Violation of any clause terminates the granted rights.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-
-For full legal advice, consult an attorney.
-```
-
-*Save the above verbatim as `LICENSE` in the repository root.*
-
-### 3.2. Create `CODE_OF_CONDUCT.md`
-
-```markdown
-# DMJ Community Code of Conduct
-
-## Our Pledge
-We are committed to providing a welcoming and inclusive environment for everyone
-who contributes to or uses the DMJ Community projects.
-
-## Expected Behavior
-- Be respectful, courteous, and professional.
-- Use inclusive language and avoid harassment of any kind.
-- Give proper attribution to original authors (see the DMJ Community License).
-
-## Unacceptable Behavior
-- Discrimination or harassment based on race, gender, sexual orientation,
-  disability, or any protected characteristic.
-- Plagiarism or unauthorized duplication of the codebase (see DCL, Section 2).
-- Threats, intimidation, or personal attacks.
-
-## Enforcement
-Instances of unacceptable behavior may be reported to the project maintainers
-via the issue tracker or email. Violations will be addressed according to the
-DMJ Community License terms.
-
-## License
-This Code of Conduct is licensed under the same terms as the project
-itself – the DMJ Community License (see the `LICENSE` file).
-```
-
-*Save as `CODE_OF_CONDUCT.md` in the repository root.*
-
-### 3.3. Update `README.md`
-
-Add a short “License” section near the top (or bottom) and a badge if desired.
-
-```markdown
-## License
-This project is released under the **DMJ Community License (DCL)** – see the
-[`LICENSE`](LICENSE) file for the full text.
-
-## Code of Conduct
-Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
-```
-
-### 3.4. Optional CI tweak
-
-Open `.github/workflows/seed-tasks.yml`. If it contains a step like:
-
-```yaml
-- name: Check license
-  run: test -f LICENSE
-```
-
-No change is needed because the file now exists. If the step asserts a specific SPDX identifier, replace it with `DMJ-Community-License` or simply remove the assertion.
+All other files (`.agent/history/*.jsonl`, `conftest.py`, etc.) are not needed for the public README.
 
 ---
 
-## 4. What could break / needs careful handling
+## 3. What needs to change & Suggested Approach  
 
-| Risk | Why it matters | Mitigation |
-|------|----------------|------------|
-| **CI expects an SPDX identifier** | Some workflows validate that `LICENSE` contains a known SPDX tag (e.g., `MIT`). Our custom DCL is non‑standard, causing the step to fail. | Either adjust the CI step to only check file existence, or add a comment line `SPDX-License-Identifier: DCL` at the top of the `LICENSE` file to satisfy simple regex checks. |
-| **Package metadata missing** | If the project later adds a `setup.cfg`/`pyproject.toml`, the license field must be set (`license = "DCL"`). | Document this in a `TODO` comment inside the new files. |
-| **Attribution notices in source files** | Some projects embed a short license header in each `.py`. Not required for functionality, but omission may violate DCL Section 1. | Optionally prepend `# SPDX-License-Identifier: DCL` to each Python file. This is harmless at runtime. |
-| **Legal enforceability** | The custom DCL is *new*; without legal review, its strict duplication clause may be unenforceable. | Add a disclaimer in `README.md` that the license is a draft and may change pending legal review. |
+1. **Backup the existing README**  
+   ```bash
+   cp README.md README.backup.md
+   ```
 
-None of the above changes affect the Python import graph, the Flask routing, or the test suite, so **all existing tests should continue to pass**.
+2. **Gather content**  
+   * **Project title & tagline** – from repository name / existing README.  
+   * **Badges** – Python version, build status (use the GitHub Actions badge from `.github/workflows/seed-tasks.yml`).  
+   * **Table of Contents** – auto‑generated or manually written (helps navigation).  
+   * **Architecture diagram** – copy the diagram (if any) from `.agent/architecture.md` or generate a simple ASCII/Markdown flow.  
+   * **Installation** – pip install from `requirements.txt` and optional virtual‑env steps.  
+   * **Running the service** – `python -m app` or `uvicorn src.app:app --reload` (verify the exact import path).  
+   * **API reference** – list each route with method, path, request/response schema; pull directly from routing modules (`routes/links_route.py`, `src/shorten_route.py`, etc.).  
+   * **Data model** – excerpt the `Link` Pydantic model fields with brief description.  
+   * **Testing** – command (`pytest -q`) and a short explanation of what each test covers.  
+   * **Contributing / CI** – mention the GitHub workflow and how PRs are validated.  
+   * **License & Code of Conduct** – link to the respective files.
+
+3. **Write the README**  
+   * Use **Markdown** with proper headings (`#`, `##`, `###`).  
+   * Keep sections **self‑contained**; avoid duplicate information.  
+   * Add code blocks with `bash` or `python` as appropriate.  
+   * Insert relative links to source files (e.g., `[app.py](app.py)`).  
+
+4. **Commit the new README**  
+   ```bash
+   git add README.md
+   git commit -m "docs: expand README with full project overview"
+   ```
+
+5. **Run CI locally** to ensure the new README does not break any linting step (if a linter runs on docs).  
 
 ---
 
-## 5. Summary of actions
+## 4. Risks / What Needs Careful Handling  
 
-1. **Add `LICENSE`** (root) with the DCL text.  
-2. **Add `CODE_OF_CONDUCT.md`** (root) with the markdown above.  
-3. **Edit `README.md`** to reference the new files.  
-4. (Optional) **Update CI** to only verify existence of `LICENSE`.  
-5. (Optional) Add a one‑line SPDX header to each `.py` if you want to be ultra‑explicit.  
+| Potential Issue | Mitigation |
+|-----------------|------------|
+| **Accidental data loss** – overwriting `README.md` without backup. | Create `README.backup.md` first; review diff before committing. |
+| **Incorrect import path** in “Running the app” snippet (two entry points exist: `app.py` and `src/app.py`). | Verify by launching both locally; keep the one actually used in production. |
+| **Out‑of‑date code snippets** – if routes change after the README is written. | Pull route definitions directly from source files (e.g., copy the decorator line). Consider adding a small script that generates the API table automatically. |
+| **Broken relative links** – markdown links may point to wrong locations if the repo structure changes. | Use relative paths exactly as they appear now; test links in a rendered view (GitHub preview). |
+| **CI failure** – some CI pipelines may enforce a minimum README size or require a “Contributing” section. | Ensure required sections exist; run `act` or similar local action runner if possible. |
+| **License mismatch** – forgetting to display the correct license badge. | Verify the `LICENSE` file type (MIT, Apache, etc.) and use the matching badge from shields.io. |
 
-After committing these files, run the test suite (`pytest -q`) to confirm nothing broke. The repository will now have a custom, stricter license and a clear community code of conduct.
+---
+
+## 5. Quick Checklist for the New README
+
+- [ ] Title, short description, and badges  
+- [ ] Table of Contents  
+- [ ] Architecture overview (copy from `.agent/architecture.md`)  
+- [ ] Installation instructions (virtualenv + `pip install -r requirements.txt`)  
+- [ ] Usage / Running the server  
+- [ ] API reference (list of endpoints with sample curl)  
+- [ ] Data model (`Link`) description  
+- [ ] Persistence explanation (`store.py`)  
+- [ ] Testing guide (`pytest`) and coverage summary  
+- [ ] CI / Contributing notes (GitHub Actions badge)  
+- [ ] License and Code of Conduct links  
+
+Following this plan will produce a **comprehensive, self‑contained README** that serves new developers, contributors, and CI pipelines without altering any functional code.
